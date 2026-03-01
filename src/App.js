@@ -278,7 +278,7 @@ function Dashboard() {
         {activeTab === 'devices' && (
           <div style={styles.card}>
             <div style={styles.cardTitle}>📱 設備列表 <span style={{fontSize: '12px', color: '#a0a0a0'}}>共 {MOCK_DEVICES.length} 個設備</span></div>
-            <table style={styles.table}}>
+            <table style={styles.table}>
               <thead><tr><th style={styles.th}>設備名稱</th><th style={styles.th}>類型</th><th style={styles.th}>位置</th><th style={styles.th}>功率</th><th style={styles.th}>狀態</th></tr></thead>
               <tbody>
                 {MOCK_DEVICES.map(device => {
