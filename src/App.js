@@ -1,73 +1,39 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 
-// ==================== 認證上下文 ====================
+// 認證系統
 const AuthContext = createContext(null);
 
-// 模擬用戶數據庫
 const MOCK_USERS = [
-  {
-    id: '1',
-    email: 'admin@taiwanmicrogrid.com',
-    password: 'Demo1234!',
-    companyName: '台灣微網科技股份有限公司',
-    role: 'admin',
-    name: '管理員'
-  }
+  { id: '1', email: 'admin@taiwanmicrogrid.com', password: 'Demo1234!', companyName: '台灣微網科技股份有限公司', role: 'admin', name: '管理員' }
 ];
 
-// 模擬設備數據
 const MOCK_DEVICES = [
   { id: '1', name: '台電進線', type: 'taipower', location: '總配電室', status: 'active', power: 150 },
-  { id: '2', name: '太陽能A區', type: 'solar', location: '屋頂', status: 'active', power: 85 },
-  { id: '3', name: '太陽能B區', type: 'solar', location: '屋頂', status: 'active', power: 62 },
+  { id: '2', name: '太陽能A區', type: 'solar', location: '屋頂A', status: 'active', power: 85 },
+  { id: '3', name: '太陽能B區', type: 'solar', location: '屋頂B', status: 'active', power: 62 },
   { id: '4', name: '儲能系統', type: 'battery', location: '地下室', status: 'active', power: -35 },
   { id: '5', name: '工廠主負載', type: 'load', location: '生產線', status: 'active', power: 180 },
   { id: '6', name: '辦公區', type: 'load', location: '辦公大樓', status: 'active', power: 45 },
   { id: '7', name: '冷氣設備', type: 'load', location: '全區', status: 'active', power: 55 },
 ];
 
-// 台灣電費計算
 const TAIWAN_ELECTRICITY = {
-  twoPeriod: {
-    summer: { peak: 4.46, offPeak: 2.12 },
-    nonSummer: { peak: 3.97, offPeak: 1.87 }
-  },
-  threePeriod: {
-    summer: { peak: 4.46, semiPeak: 3.52, offPeak: 2.12 },
-    nonSummer: { peak: 3.97, semiPeak: 3.16, offPeak: 1.87 }
-  }
+  twoPeriod: { summer: { peak: 4.46, offPeak: 2.12 }, nonSummer: { peak: 3.97, offPeak: 1.87 } },
+  threePeriod: { summer: { peak: 4.46, semiPeak: 3.52, offPeak: 2.12 }, nonSummer: { peak: 3.97, semiPeak: 3.16, offPeak: 1.87 } }
 };
 
-const calculateElectricityCost = (dailyData, planType = 'twoPeriod') => {
+const calculateCost = (dailyData, planType = 'twoPeriod') => {
   const isSummer = new Date().getMonth() >= 5 && new Date().getMonth() <= 8;
-  const rates = planType === 'twoPeriod' 
-    ? (isSummer ? TAIWAN_ELECTRICITY.twoPeriod.summer : TAIWAN_ELECTRICITY.twoPeriod.nonSummer)
-    : (isSummer ? TAIWAN_ELECTRICITY.threePeriod.summer : TAIWAN_ELECTRICITY.threePeriod.nonSummer);
-  
+  const rates = planType === 'twoPeriod' ? (isSummer ? TAIWAN_ELECTRICITY.twoPeriod.summer : TAIWAN_ELECTRICITY.twoPeriod.nonSummer) : (isSummer ? TAIWAN_ELECTRICITY.threePeriod.summer : TAIWAN_ELECTRICITY.threePeriod.nonSummer);
   let cost = 0, peakKwh = 0, offPeakKwh = 0, semiPeakKwh = 0;
-  
   dailyData.forEach(hour => {
     const hourNum = parseInt(hour.time.split(':')[0]);
     const kwh = hour.power / 1000;
-    
-    if (planType === 'twoPeriod') {
-      if (hourNum >= 7 && hourNum < 22) peakKwh += kwh;
-      else offPeakKwh += kwh;
-    } else {
-      if (hourNum >= 7 && hourNum < 22) {
-        if (hourNum >= 15 && hourNum < 20) semiPeakKwh += kwh;
-        else peakKwh += kwh;
-      } else offPeakKwh += kwh;
-    }
+    if (planType === 'twoPeriod') { if (hourNum >= 7 && hourNum < 22) peakKwh += kwh; else offPeakKwh += kwh; }
+    else { if (hourNum >= 7 && hourNum < 22) { if (hourNum >= 15 && hourNum < 20) semiPeakKwh += kwh; else peakKwh += kwh; } else offPeakKwh += kwh; }
   });
-  
-  if (planType === 'twoPeriod') {
-    cost = peakKwh * rates.peak + offPeakKwh * rates.offPeak;
-  } else {
-    cost = peakKwh * rates.peak + semiPeakKwh * rates.semiPeak + offPeakKwh * rates.offPeak;
-  }
-  
+  cost = planType === 'twoPeriod' ? peakKwh * rates.peak + offPeakKwh * rates.offPeak : peakKwh * rates.peak + semiPeakKwh * rates.semiPeak + offPeakKwh * rates.offPeak;
   return { totalCost: Math.round(cost * 100) / 100, peakKwh: Math.round(peakKwh * 100) / 100, offPeakKwh: Math.round(offPeakKwh * 100) / 100, semiPeakKwh: Math.round(semiPeakKwh * 100) / 100, rates };
 };
 
@@ -83,37 +49,45 @@ const generateDailyData = () => {
   return data;
 };
 
+const colors = { bg: '#0a0a0f', card: '#1a1a2e', primary: '#FFD700', accent: '#00d4ff', success: '#00e676', error: '#ff5252', text: '#fff', textSecondary: '#a0a0a0', border: '#2a2a3e', taipower: '#FFD700', solar: '#4CAF50', battery: '#2196F3', load: '#FF5722' };
+
 const styles = {
-  container: { minHeight: '100vh', backgroundColor: '#0a0a0f', color: '#fff', fontFamily: "'Microsoft JhengHei', 'Noto Sans TC', Arial, sans-serif" },
-  loginContainer: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%)', padding: '20px' },
-  loginBox: { width: '100%', maxWidth: '420px', backgroundColor: '#16213e', borderRadius: '20px', padding: '40px', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' },
-  header: { textAlign: 'center', marginBottom: '30px' },
-  logo: { fontSize: '48px', marginBottom: '10px' },
-  title: { fontSize: '24px', color: '#FFD700', marginBottom: '5px' },
-  subtitle: { fontSize: '14px', color: '#888' },
-  input: { width: '100%', padding: '14px 16px', marginBottom: '15px', backgroundColor: '#0f3460', border: '2px solid #1a1a2e', borderRadius: '10px', color: '#fff', fontSize: '15px', outline: 'none', boxSizing: 'border-box' },
-  button: { width: '100%', padding: '14px', backgroundColor: '#FFD700', color: '#0a0a0f', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.3s' },
-  nav: { backgroundColor: '#16213e', padding: '15px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100, flexWrap: 'wrap', gap: '10px' },
-  navLogo: { display: 'flex', alignItems: 'center', gap: '10px' },
-  navLinks: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
-  navLink: { padding: '8px 12px', backgroundColor: 'transparent', border: 'none', borderRadius: '8px', color: '#888', fontSize: '12px', cursor: 'pointer', transition: 'all 0.3s', whiteSpace: 'nowrap' },
-  navLinkActive: { backgroundColor: '#FFD700', color: '#0a0a0f' },
-  main: { padding: '20px', maxWidth: '1400px', margin: '0 auto' },
-  card: { backgroundColor: '#16213e', borderRadius: '16px', padding: '25px', marginBottom: '20px' },
-  cardTitle: { fontSize: '18px', color: '#FFD700', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' },
-  statCard: { backgroundColor: '#0f3460', borderRadius: '12px', padding: '20px', textAlign: 'center' },
-  statValue: { fontSize: '24px', fontWeight: 'bold', color: '#FFD700' },
-  statLabel: { fontSize: '12px', color: '#888', marginTop: '5px' },
-  table: { width: '100%', borderCollapse: 'collapse', overflowX: 'auto', display: 'block' },
-  th: { textAlign: 'left', padding: '12px', borderBottom: '2px solid #0f3460', color: '#888', fontSize: '12px', whiteSpace: 'nowrap' },
-  td: { padding: '12px', borderBottom: '1px solid #0f3460', fontSize: '14px', whiteSpace: 'nowrap' },
-  badge: { padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' },
-  badgeActive: { backgroundColor: 'rgba(76, 175, 80, 0.2)', color: '#4CAF50' },
-  badgeInactive: { backgroundColor: 'rgba(244, 67, 54, 0.2)', color: '#f44336' },
-  select: { padding: '10px 15px', backgroundColor: '#0f3460', border: '1px solid #1a1a2e', borderRadius: '8px', color: '#fff', fontSize: '14px', marginRight: '10px' },
-  exportBtn: { padding: '8px 16px', backgroundColor: '#0f3460', border: '1px solid #FFD700', borderRadius: '8px', color: '#FFD700', fontSize: '13px', cursor: 'pointer', marginLeft: '10px' },
-  circle: { border: '3px solid', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' },
+  loginBg: { background: 'linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #1e1e32 100%)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  loginPattern: { position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(255,215,0,0.05) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(0,212,255,0.05) 0%, transparent 50%)' },
+  loginBox: { width: '100%', maxWidth: '440px', backgroundColor: 'rgba(26,26,46,0.95)', backdropFilter: 'blur(20px)', borderRadius: '24px', padding: '48px', boxShadow: '0 25px 80px rgba(0,0,0,0.5), 0 0 1px rgba(255,215,0,0.2)', border: '1px solid rgba(255,215,0,0.1)', position: 'relative', zIndex: 1 },
+  logoIcon: { width: '80px', height: '80px', background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: '36px', boxShadow: '0 10px 40px rgba(255,215,0,0.3)' },
+  logoText: { fontSize: '28px', fontWeight: 'bold', background: 'linear-gradient(90deg, #FFD700, #FFA500)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', textAlign: 'center', marginBottom: '4px' },
+  logoSub: { textAlign: 'center', fontSize: '12px', color: '#a0a0a0', letterSpacing: '3px', marginBottom: '32px' },
+  input: { width: '100%', padding: '16px 20px', backgroundColor: '#12121a', border: '2px solid #2a2a3e', borderRadius: '12px', color: '#fff', fontSize: '15px', outline: 'none', marginBottom: '20px', boxSizing: 'border-box', transition: 'all 0.3s' },
+  inputFocus: { borderColor: '#FFD700', boxShadow: '0 0 0 4px rgba(255,215,0,0.1)' },
+  button: { width: '100%', padding: '18px', background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', color: '#0a0a0f', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.3s', boxShadow: '0 10px 30px rgba(255,215,0,0.3)' },
+  errorBox: { backgroundColor: 'rgba(255,82,82,0.1)', border: '1px solid rgba(255,82,82,0.3)', borderRadius: '8px', padding: '14px', marginBottom: '20px', color: '#ff5252', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' },
+  demoBox: { backgroundColor: 'rgba(0,212,255,0.05)', border: '1px solid rgba(0,212,255,0.2)', borderRadius: '12px', padding: '16px', marginTop: '24px' },
+  demoTitle: { fontSize: '12px', color: '#00d4ff', marginBottom: '8px', fontWeight: '600' },
+  demoText: { fontSize: '12px', color: '#a0a0a0', lineHeight: '1.6' },
+  nav: { backgroundColor: 'rgba(26,26,46,0.95)', backdropFilter: 'blur(20px)', borderBottom: '1px solid #2a2a3e', padding: '0 30px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100, flexWrap: 'wrap', gap: '10px' },
+  navLogo: { display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 0' },
+  navIcon: { width: '40px', height: '40px', background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' },
+  navTitle: { fontSize: '16px', fontWeight: 'bold', color: '#fff' },
+  navSubtitle: { fontSize: '11px', color: '#a0a0a0' },
+  navLink: { padding: '12px 16px', backgroundColor: 'transparent', border: 'none', borderRadius: '8px', color: '#a0a0a0', fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s', fontWeight: '500' },
+  navLinkActive: { backgroundColor: 'rgba(255,215,0,0.1)', color: '#FFD700' },
+  main: { padding: '24px', maxWidth: '1600px', margin: '0 auto' },
+  pageTitle: { fontSize: '24px', fontWeight: 'bold', color: '#fff', marginBottom: '8px' },
+  pageSubtitle: { fontSize: '13px', color: '#a0a0a0', marginBottom: '24px' },
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '24px' },
+  statCard: { backgroundColor: '#1a1a2e', borderRadius: '16px', padding: '24px', border: '1px solid #2a2a3e', display: 'flex', alignItems: 'center', gap: '16px' },
+  statIcon: { width: '56px', height: '56px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' },
+  statValue: { fontSize: '28px', fontWeight: 'bold', color: '#fff' },
+  statLabel: { fontSize: '13px', color: '#a0a0a0', marginTop: '4px' },
+  card: { backgroundColor: '#1a1a2e', borderRadius: '16px', padding: '24px', border: '1px solid #2a2a3e', marginBottom: '24px' },
+  cardTitle: { fontSize: '16px', fontWeight: '600', color: '#fff', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+  powerCircle: { width: '100px', height: '100px', borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '3px solid', boxShadow: '0 10px 30px rgba(0,0,0,0.3)', flexShrink: 0 },
+  table: { width: '100%', borderCollapse: 'collapse' },
+  th: { textAlign: 'left', padding: '14px 16px', borderBottom: '2px solid #2a2a3e', color: '#a0a0a0', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase' },
+  td: { padding: '16px', borderBottom: '1px solid #2a2a3e', fontSize: '14px', color: '#fff' },
+  badge: { padding: '6px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' },
+  select: { padding: '10px 14px', backgroundColor: '#12121a', border: '1px solid #2a2a3e', borderRadius: '8px', color: '#fff', fontSize: '13px', cursor: 'pointer' },
 };
 
 function LoginPage() {
@@ -123,38 +97,47 @@ function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [focused, setFocused] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    await new Promise(r => setTimeout(r, 800));
+    await new Promise(r => setTimeout(r, 1200));
     const user = MOCK_USERS.find(u => u.email === email && u.password === password);
-    if (user) {
-      const { password: _, ...userWithoutPassword } = user;
-      login(userWithoutPassword);
-      navigate('/dashboard');
-    } else {
-      setError('帳號或密碼錯誤');
-    }
+    if (user) { const { password: _, ...userWithoutPassword } = user; login(userWithoutPassword); navigate('/dashboard'); }
+    else { setError('帳號或密碼錯誤，請重新輸入'); }
     setLoading(false);
   };
 
   return (
-    <div style={styles.loginContainer}>
+    <div style={styles.loginBg}>
+      <div style={styles.loginPattern} />
       <div style={styles.loginBox}>
-        <div style={styles.header}>
-          <div style={styles.logo}>⚡</div>
-          <h1 style={styles.title}>台灣微網科技</h1>
-          <p style={styles.subtitle}>工廠用電管理系統</p>
-        </div>
+        <div style={styles.logoIcon}>⚡</div>
+        <div style={styles.logoText}>台灣微網科技</div>
+        <div style={styles.logoSub}>ENERGY MANAGEMENT SYSTEM</div>
+        
         <form onSubmit={handleSubmit}>
-          <input type="email" placeholder="電子郵件" value={email} onChange={(e) => setEmail(e.target.value)} style={styles.input} required />
-          <input type="password" placeholder="密碼" value={password} onChange={(e) => setPassword(e.target.value)} style={styles.input} required />
-          {error && <p style={{ color: '#f44336', fontSize: '13px', marginBottom: '15px' }}>{error}</p>}
-          <button type="submit" style={{...styles.button, opacity: loading ? 0.7 : 1}} disabled={loading}>{loading ? '登入中...' : '登入'}</button>
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="請輸入帳號"
+            style={{...styles.input, ...(focused === 'email' ? styles.inputFocus : {})}}
+            onFocus={() => setFocused('email')} onBlur={() => setFocused(null)} required />
+          
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="請輸入密碼"
+            style={{...styles.input, ...(focused === 'password' ? styles.inputFocus : {})}}
+            onFocus={() => setFocused('password')} onBlur={() => setFocused(null)} required />
+          
+          {error && <div style={styles.errorBox}><span>⚠️</span> {error}</div>}
+          
+          <button type="submit" style={{...styles.button, opacity: loading ? 0.8 : 1}} disabled={loading}>
+            {loading ? '登入中...' : '登入系統'}
+          </button>
         </form>
-        <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '12px', color: '#666' }}>測試帳號: admin@taiwanmicrogrid.com<br/>測試密碼: Demo1234!</p>
+        
+        <div style={styles.demoBox}>
+          <div style={styles.demoTitle}>📋 測試帳號</div>
+          <div style={styles.demoText}>帳號：admin@taiwanmicrogrid.com<br/>密碼：Demo1234!</div>
+        </div>
       </div>
     </div>
   );
@@ -165,218 +148,134 @@ function Dashboard() {
   const [dailyData] = useState(generateDailyData);
   const [activeTab, setActiveTab] = useState('overview');
 
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+  useEffect(() => { const timer = setInterval(() => setCurrentTime(new Date()), 1000); return () => clearInterval(timer); }, []);
 
-  const currentHour = currentTime.getHours();
-  const currentData = dailyData[currentHour] || { power: 0, solar: 0, taipower: 0, battery: 0 };
+  const currentData = dailyData[currentTime.getHours()] || { power: 0, solar: 0, taipower: 0, battery: 0 };
   const totalDaily = dailyData.reduce((sum, h) => sum + h.power, 0);
-  const totalSolar = dailyData.reduce((sum, h) => sum + h.solar, 0);
-  const totalCost = calculateElectricityCost(dailyData, 'twoPeriod');
+  const totalCost = calculateCost(dailyData, 'twoPeriod');
 
   return (
-    <div style={styles.container}>
+    <div style={{minHeight: '100vh', backgroundColor: '#0a0a0f', color: '#fff', fontFamily: "'Noto Sans TC', 'Microsoft JhengHei', Arial"}}>
       <nav style={styles.nav}>
         <div style={styles.navLogo}>
-          <span style={{ fontSize: '28px' }}>⚡</span>
-          <div>
-            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#FFD700' }}>台灣微網科技</div>
-            <div style={{ fontSize: '10px', color: '#888' }}>用電管理系統</div>
-          </div>
+          <div style={styles.navIcon}>⚡</div>
+          <div><div style={styles.navTitle}>台灣微網科技</div><div style={styles.navSubtitle}>用電管理系統</div></div>
         </div>
-        <div style={styles.navLinks}>
-          {[{key: 'overview', label: '🏠 總覽'}, {key: 'power', label: '⚡ 電力'}, {key: 'devices', label: '📱 設備'}, {key: 'analysis', label: '📊 分析'}, {key: 'cost', label: '💰 電費'}, {key: 'export', label: '📤 匯出'}].map(tab => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{...styles.navLink, ...(activeTab === tab.key ? styles.navLinkActive : {})}}>{tab.label}</button>
+        <div style={{display: 'flex', gap: '4px', flexWrap: 'wrap'}}>
+          {[{key: 'overview', label: '🏠', name: '總覽'}, {key: 'power', label: '⚡', name: '電力'}, {key: 'devices', label: '📱', name: '設備'}, {key: 'analysis', label: '📊', name: '分析'}, {key: 'cost', label: '💰', name: '電費'}, {key: 'export', label: '📤', name: '匯出'}].map(tab => (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{...styles.navLink, ...(activeTab === tab.key ? styles.navLinkActive : {})}}>
+              {tab.label} {tab.name}
+            </button>
           ))}
         </div>
-        <div style={{ fontSize: '12px', color: '#888' }}>{currentTime.toLocaleString('zh-TW')}</div>
+        <div style={{display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', backgroundColor: '#12121a', borderRadius: '8px'}}>
+          <div style={{width: '32px', height: '32px', background: 'linear-gradient(135deg, #FFD700, #FFA500)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>👨‍💼</div>
+          <div><div style={{fontSize: '13px', fontWeight: '600'}}>管理員</div><div style={{fontSize: '11px', color: '#a0a0a0'}}>台灣微網科技</div></div>
+        </div>
       </nav>
+
       <main style={styles.main}>
         {activeTab === 'overview' && (
           <>
+            <h1 style={styles.pageTitle}>📊 系統總覽 <span style={{fontSize: '14px', color: '#a0a0a0', fontWeight: 'normal'}}>{currentTime.toLocaleString('zh-TW', {year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'})}</span></h1>
+            <p style={styles.pageSubtitle}>即時監控工廠用電狀況與設備運行資訊</p>
+            
             <div style={styles.grid}>
-              <div style={styles.statCard}><div style={styles.statValue}>{currentData.power.toFixed(1)}</div><div style={styles.statLabel}>目前負載 (kW)</div></div>
-              <div style={styles.statCard}><div style={{...styles.statValue, color: '#4CAF50'}}>{currentData.solar.toFixed(1)}</div><div style={styles.statLabel}>太陽能發電 (kW)</div></div>
-              <div style={styles.statCard}><div style={{...styles.statValue, color: '#FFD700'}}>{currentData.taipower.toFixed(1)}</div><div style={styles.statLabel}>台電供電 (kW)</div></div>
-              <div style={styles.statCard}><div style={{...styles.statValue, color: '#2196F3'}}>{currentData.battery >= 0 ? '+' : ''}{currentData.battery.toFixed(1)}</div><div style={styles.statLabel}>儲能 {currentData.battery >= 0 ? '放電' : '充電'} (kW)</div></div>
+              <div style={{...styles.statCard, borderLeft: '4px solid #FFD700'}}><div style={{...styles.statIcon, backgroundColor: 'rgba(255,215,0,0.1)'}}>⚡</div><div><div style={{...styles.statValue, color: '#FFD700'}}>{currentData.power.toFixed(1)}</div><div style={styles.statLabel}>目前負載 (kW)</div></div></div>
+              <div style={{...styles.statCard, borderLeft: '4px solid #4CAF50'}}><div style={{...styles.statIcon, backgroundColor: 'rgba(76,175,80,0.1)'}}>☀️</div><div><div style={{...styles.statValue, color: '#4CAF50'}}>{currentData.solar.toFixed(1)}</div><div style={styles.statLabel}>太陽能發電 (kW)</div></div></div>
+              <div style={{...styles.statCard, borderLeft: '4px solid #FFD700'}}><div style={{...styles.statIcon, backgroundColor: 'rgba(255,215,0,0.1)'}}>🔌</div><div><div style={{...styles.statValue}}>{currentData.taipower.toFixed(1)}</div><div style={styles.statLabel}>台電供電 (kW)</div></div></div>
+              <div style={{...styles.statCard, borderLeft: '4px solid #2196F3'}}><div style={{...styles.statIcon, backgroundColor: 'rgba(33,150,243,0.1)'}}>🔋</div><div><div style={{...styles.statValue, color: '#2196F3'}}>{currentData.battery >= 0 ? '+' : ''}{currentData.battery.toFixed(1)}</div><div style={styles.statLabel}>儲能 {currentData.battery >= 0 ? '放電' : '充電'} (kW)</div></div></div>
             </div>
+            
             <div style={styles.card}>
-              <div style={styles.cardTitle}>📊 今日累積</div>
-              <div style={styles.grid}>
-                <div style={styles.statCard}><div style={styles.statValue}>{(totalDaily / 1000).toFixed(2)}</div><div style={styles.statLabel}>總用電度數 (kWh)</div></div>
-                <div style={styles.statCard}><div style={{...styles.statValue, color: '#4CAF50'}}>{(totalSolar / 1000).toFixed(2)}</div><div style={styles.statLabel}>太陽能發電度數 (kWh)</div></div>
-                <div style={styles.statCard}><div style={styles.statValue}>{(totalSolar / totalDaily * 100).toFixed(1)}%</div><div style={styles.statLabel}>太陽能佔比</div></div>
-                <div style={styles.statCard}><div style={{...styles.statValue, color: '#4CAF50'}}>NT$ {totalCost.totalCost.toFixed(0)}</div><div style={styles.statLabel}>今日預估電費</div></div>
+              <div style={styles.cardTitle}><span>📈 今日用電趨勢</span><span style={{fontSize: '12px', color: '#a0a0a0'}}>24小時監控</span></div>
+              <div style={{ display: 'flex', height: '200px', gap: '3px', alignItems: 'flex-end' }}>
+                {dailyData.map((hour, i) => (
+                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ width: '100%', height: `${Math.min(100, hour.power / 3)}%`, backgroundColor: i === currentTime.getHours() ? '#FFD700' : '#2a2a3e', borderRadius: '3px 3px 0 0', transition: 'all 0.3s', minHeight: '4px' }} />
+                  </div>
+                ))}
               </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '11px', color: '#a0a0a0' }}><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>
             </div>
           </>
         )}
-        {activeTab === 'power' && <PowerFlowModule data={currentData} dailyData={dailyData} />}
-        {activeTab === 'devices' && <DevicesModule devices={MOCK_DEVICES} />}
-        {activeTab === 'analysis' && <AnalysisModule dailyData={dailyData} />}
-        {activeTab === 'cost' && <CostModule dailyData={dailyData} />}
-        {activeTab === 'export' && <ExportModule dailyData={dailyData} />}
-      </main>
-    </div>
-  );
-}
 
-function PowerFlowModule({ data, dailyData }) {
-  return (
-    <div style={styles.card}>
-      <div style={styles.cardTitle}>⚡ 即時電力潮流</div>
-      <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '30px 0', flexWrap: 'wrap', gap: '20px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
-          <div style={{ ...styles.circle, backgroundColor: '#FFD700', width: 100, height: 100, borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: '30px' }}>⚡</span><span style={{ fontSize: '12px', fontWeight: 'bold' }}>台電</span><span style={{ fontSize: '14px', color: '#333' }}>{data.taipower.toFixed(1)} kW</span>
-          </div>
-          <div style={{ ...styles.circle, backgroundColor: '#4CAF50', width: 80, height: 80, borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: '24px' }}>☀️</span><span style={{ fontSize: '10px', fontWeight: 'bold' }}>太陽能</span><span style={{ fontSize: '12px', color: '#fff' }}>{data.solar.toFixed(1)} kW</span>
-          </div>
-        </div>
-        <div style={{ fontSize: '40px', color: '#FFD700' }}>→</div>
-        <div style={{ ...styles.circle, backgroundColor: '#FF5722', width: 120, height: 120, borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: '36px' }}>🏭</span><span style={{ fontSize: '14px', fontWeight: 'bold' }}>總負載</span><span style={{ fontSize: '18px', color: '#fff' }}>{data.power.toFixed(1)} kW</span>
-        </div>
-      </div>
-      <div style={{ marginTop: '20px' }}>
-        <div style={{ fontSize: '14px', color: '#888', marginBottom: '10px' }}>📈 24小時用電趨勢</div>
-        <div style={{ display: 'flex', height: '150px', gap: '2px', alignItems: 'flex-end' }}>
-          {dailyData.map((hour, i) => (
-            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ width: '80%', height: `${Math.min(100, hour.power / 3)}%`, backgroundColor: i === new Date().getHours() ? '#FFD700' : '#0f3460', borderRadius: '2px 2px 0 0' }} />
+        {activeTab === 'power' && (
+          <div style={styles.card}>
+            <div style={styles.cardTitle}>⚡ 即時電力潮流</div>
+            <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '40px 0', flexWrap: 'wrap', gap: '30px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+                <div style={{...styles.powerCircle, backgroundColor: '#FFD700', borderColor: '#FFD700'}}><span style={{fontSize: '28px'}}>⚡</span><span style={{fontSize: '12px', fontWeight: 'bold', color: '#333'}}>台電</span><span style={{fontSize: '14px', color: '#333'}}>{currentData.taipower.toFixed(1)} kW</span></div>
+                <div style={{...styles.powerCircle, backgroundColor: '#4CAF50', borderColor: '#4CAF50'}}><span style={{fontSize: '28px'}}>☀️</span><span style={{fontSize: '12px', fontWeight: 'bold', color: '#fff'}}>太陽能</span><span style={{fontSize: '14px', color: '#fff'}}>{currentData.solar.toFixed(1)} kW</span></div>
+              </div>
+              <div style={{fontSize: '50px', color: '#FFD700'}}>→</div>
+              <div style={{...styles.powerCircle, backgroundColor: '#FF5722', borderColor: '#FF5722', width: '140px', height: '140px'}}><span style={{fontSize: '40px'}}>🏭</span><span style={{fontSize: '14px', fontWeight: 'bold', color: '#fff'}}>總負載</span><span style={{fontSize: '22px', color: '#fff'}}>{currentData.power.toFixed(1)} kW</span></div>
             </div>
-          ))}
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#666', marginTop: '5px' }}>
-          <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span>
-        </div>
-      </div>
-    </div>
-  );
-}
+          </div>
+        )}
 
-function DevicesModule({ devices }) {
-  return (
-    <div style={styles.card}>
-      <div style={styles.cardTitle}>📱 設備列表</div>
-      <div style={{ overflowX: 'auto' }}>
-        <table style={styles.table}>
-          <thead><tr><th style={styles.th}>設備名稱</th><th style={styles.th}>類型</th><th style={styles.th}>位置</th><th style={styles.th}>功率</th><th style={styles.th}>狀態</th></tr></thead>
-          <tbody>
-            {devices.map(device => (
-              <tr key={device.id}>
-                <td style={styles.td}><span style={{ marginRight: '8px' }}>{device.type === 'taipower' ? '⚡' : device.type === 'solar' ? '☀️' : device.type === 'battery' ? '🔋' : '⚙️'}</span>{device.name}</td>
-                <td style={styles.td}><span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '11px', backgroundColor: device.type === 'taipower' ? 'rgba(255,215,0,0.2)' : device.type === 'solar' ? 'rgba(76,175,80,0.2)' : device.type === 'battery' ? 'rgba(33,150,243,0.2)' : 'rgba(255,87,34,0.2)', color: device.type === 'taipower' ? '#FFD700' : device.type === 'solar' ? '#4CAF50' : device.type === 'battery' ? '#2196F3' : '#FF5722' }}>{device.type === 'taipower' ? '台電' : device.type === 'solar' ? '太陽能' : device.type === 'battery' ? '儲能' : '負載'}</span></td>
-                <td style={styles.td}>{device.location}</td>
-                <td style={styles.td}>{device.power} kW</td>
-                <td style={styles.td}><span style={{ ...styles.badge, ...(device.status === 'active' ? styles.badgeActive : styles.badgeInactive) }}>{device.status === 'active' ? '運作中' : '停止'}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
+        {activeTab === 'devices' && (
+          <div style={styles.card}>
+            <div style={styles.cardTitle}>📱 設備列表 <span style={{fontSize: '12px', color: '#a0a0a0'}}>共 {MOCK_DEVICES.length} 個設備</span></div>
+            <table style={styles.table}}>
+              <thead><tr><th style={styles.th}>設備名稱</th><th style={styles.th}>類型</th><th style={styles.th}>位置</th><th style={styles.th}>功率</th><th style={styles.th}>狀態</th></tr></thead>
+              <tbody>
+                {MOCK_DEVICES.map(device => (
+                  <tr key={device.id}>
+                    <td style={styles.td}><span style={{marginRight: '10px', fontSize: '18px'}}>{device.type === 'taipower' ? '⚡' : device.type === 'solar' ? '☀️' : device.type === 'battery' ? '🔋' : '⚙️'}</span>{device.name}</td>
+                    <td style={styles.td}><span style={{padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', backgroundColor: device.type === 'taipower' ? 'rgba(255,215,0,0.15)' : device.type === 'solar' ? 'rgba(76,175,80,0.15)' : device.type === 'battery' ? 'rgba(33,150,243,0.15)' : 'rgba(255,87,34,0.15)', color: device.type === 'taipower' ? '#FFD700' : device.type === 'solar' ? '#4CAF50' : device.type === 'battery' ? '#2196F3' : '#FF5722'}}>{device.type === 'taipower' ? '台電' : device.type === 'solar' ? '太陽能' : device.type === 'battery' ? '儲能' : '負載'}</span></td>
+                    <td style={styles.td}>{device.location}</td>
+                    <td style={styles.td}><strong>{device.power} kW</strong></td>
+                    <td style={styles.td}><span style={{...styles.badge, backgroundColor: device.status === 'active' ? 'rgba(0,230,118,0.15)' : 'rgba(255,82,82,0.15)', color: device.status === 'active' ? '#00e676' : '#ff5252'}}>{device.status === 'active' ? '● 運作中' : '○ 停止'}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-function AnalysisModule({ dailyData }) {
-  const [period, setPeriod] = useState('daily');
-  const monthlyData = Array.from({ length: 30 }, (_, i) => ({ day: i + 1, power: 150 + Math.random() * 100 + Math.sin(i / 5) * 30, solar: Math.random() * 80 }));
-  const yearlyData = Array.from({ length: 12 }, (_, i) => ({ month: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'][i], power: 4000 + Math.random() * 2000 + (i >= 5 && i <= 8 ? 1500 : 0), solar: 800 + Math.random() * 400 }));
-  const currentData = period === 'daily' ? dailyData : period === 'monthly' ? monthlyData : yearlyData;
+        {activeTab === 'analysis' && (
+          <div style={styles.card}>
+            <div style={styles.cardTitle}>📊 用電分析</div>
+            <div style={styles.grid}>
+              <div style={styles.statCard}><div style={styles.statValue}>{(totalDaily / 1000).toFixed(1)}</div><div style={styles.statLabel}>今日總用電 (kWh)</div></div>
+              <div style={styles.statCard}><div style={{...styles.statValue, color: '#4CAF50'}}>{(dailyData.reduce((s, h) => s + h.solar, 0) / 1000).toFixed(1)}</div><div style={styles.statLabel}>太陽能發電 (kWh)</div></div>
+              <div style={styles.statCard}><div style={{...styles.statValue, color: '#00d4ff'}}>{((dailyData.reduce((s, h) => s + h.solar, 0) / totalDaily) * 100).toFixed(1)}%</div><div style={styles.statLabel}>太陽能佔比</div></div>
+            </div>
+          </div>
+        )}
 
-  return (
-    <div style={styles.card}>
-      <div style={styles.cardTitle}>📊 用電分析<select style={styles.select} value={period} onChange={(e) => setPeriod(e.target.value)}><option value="daily">每日</option><option value="monthly">每月</option><option value="yearly">每年</option></select></div>
-      <div style={styles.grid}>
-        <div style={styles.statCard}><div style={styles.statValue}>{period === 'daily' ? (dailyData.reduce((s, h) => s + h.power, 0) / 1000).toFixed(1) : period === 'monthly' ? monthlyData.reduce((s, d) => s + d.power, 0).toFixed(0) : yearlyData.reduce((s, d) => s + d.power, 0).toFixed(0)}</div><div style={styles.statLabel}>{period === 'daily' ? '今日' : period === 'monthly' ? '本月' : '本年'} 總用電 (kWh)</div></div>
-        <div style={styles.statCard}><div style={{...styles.statValue, color: '#4CAF50'}}>{period === 'daily' ? (dailyData.reduce((s, h) => s + h.solar, 0) / 1000).toFixed(1) : period === 'monthly' ? monthlyData.reduce((s, d) => s + d.solar, 0).toFixed(0) : yearlyData.reduce((s, d) => s + d.solar, 0).toFixed(0)}</div><div style={styles.statLabel}>太陽能發電 (kWh)</div></div>
-      </div>
-    </div>
-  );
-}
+        {activeTab === 'cost' && (
+          <div style={styles.card}>
+            <div style={styles.cardTitle}>💰 電費試算</div>
+            <div style={styles.grid}>
+              <div style={styles.statCard}><div style={styles.statValue}>NT$ {totalCost.totalCost.toFixed(0)}</div><div style={styles.statLabel}>今日電費</div></div>
+              <div style={styles.statCard}><div style={styles.statValue}>NT$ {(totalCost.totalCost * 30).toFixed(0)}</div><div style={styles.statLabel}>每月預估</div></div>
+              <div style={styles.statCard}><div style={styles.statValue}>NT$ {(totalCost.totalCost * 365 / 10000).toFixed(1)}萬</div><div style={styles.statLabel}>每年預估</div></div>
+            </div>
+          </div>
+        )}
 
-function CostModule({ dailyData }) {
-  const [planType, setPlanType] = useState('twoPeriod');
-  const cost = calculateElectricityCost(dailyData, planType);
-  const monthlyCost = cost.totalCost * 30;
-  const yearlyCost = cost.totalCost * 365;
-  const isSummer = new Date().getMonth() >= 5 && new Date().getMonth() <= 8;
-
-  return (
-    <div style={styles.card}>
-      <div style={styles.cardTitle}>💰 電費試算<select style={styles.select} value={planType} onChange={(e) => setPlanType(e.target.value)}><option value="twoPeriod">高壓兩段式</option><option value="threePeriod">高壓三段式</option></select></div>
-      <div style={{ backgroundColor: '#0f3460', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-        <div style={{ fontSize: '14px', color: '#888', marginBottom: '15px' }}>📅 台灣電力公司電費表 (<span style={{ color: isSummer ? '#FF9800' : '#4CAF50' }}>{isSummer ? '夏季 (6-9月)' : '非夏季'}</span>)</div>
-        <div style={styles.grid}>
-          <div style={styles.statCard}><div style={styles.statValue}>{cost.totalCost.toFixed(0)}</div><div style={styles.statLabel}>今日電費</div></div>
-          <div style={styles.statCard}><div style={styles.statValue}>{monthlyCost.toFixed(0)}</div><div style={styles.statLabel}>每月預估</div></div>
-          <div style={styles.statCard}><div style={styles.statValue}>{(yearlyCost / 10000).toFixed(1)}萬</div><div style={styles.statLabel}>每年預估</div></div>
-        </div>
-      </div>
-      <table style={styles.table}>
-        <thead><tr><th style={styles.th}>時段</th><th style={styles.th}>單價</th><th style={styles.th}>用電度數</th><th style={styles.th}>小計</th></tr></thead>
-        <tbody>
-          {planType === 'twoPeriod' ? (
-            <>
-              <tr><td style={{...styles.td, color: '#f44336'}}>尖峰 07:30-22:30</td><td style={styles.td}>{cost.rates.peak} 元/度</td><td style={styles.td}>{cost.peakKwh.toFixed(1)} kWh</td><td style={styles.td}>NT$ {(cost.peakKwh * cost.rates.peak).toFixed(0)}</td></tr>
-              <tr><td style={{...styles.td, color: '#4CAF50'}}>離峰 22:30-07:30</td><td style={styles.td}>{cost.rates.offPeak} 元/度</td><td style={styles.td}>{cost.offPeakKwh.toFixed(1)} kWh</td><td style={styles.td}>NT$ {(cost.offPeakKwh * cost.rates.offPeak).toFixed(0)}</td></tr>
-            </>
-          ) : (
-            <>
-              <tr><td style={{...styles.td, color: '#f44336'}}>尖峰</td><td style={styles.td}>{cost.rates.peak}</td><td style={styles.td}>{cost.peakKwh.toFixed(1)}</td><td style={styles.td}>NT$ {(cost.peakKwh * cost.rates.peak).toFixed(0)}</td></tr>
-              <tr><td style={{...styles.td, color: '#FF9800'}}>半尖峰</td><td style={styles.td}>{cost.rates.semiPeak}</td><td style={styles.td}>{cost.semiPeakKwh.toFixed(1)}</td><td style={styles.td}>NT$ {(cost.semiPeakKwh * cost.rates.semiPeak).toFixed(0)}</td></tr>
-              <tr><td style={{...styles.td, color: '#4CAF50'}}>離峰</td><td style={styles.td}>{cost.rates.offPeak}</td><td style={styles.td}>{cost.offPeakKwh.toFixed(1)}</td><td style={styles.td}>NT$ {(cost.offPeakKwh * cost.rates.offPeak).toFixed(0)}</td></tr>
-            </>
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function ExportModule({ dailyData }) {
-  const exportCSV = () => {
-    const headers = ['時間', '負載(kW)', '太陽能(kW)', '台電(kW)', '儲能(kW)'];
-    const rows = dailyData.map(h => [h.time, h.power, h.solar, h.taipower, h.battery]);
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `用電資料_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-  };
-
-  return (
-    <div style={styles.card}>
-      <div style={styles.cardTitle}>📤 資料匯出</div>
-      <div style={styles.grid}>
-        <div style={styles.statCard}>
-          <div style={{ fontSize: '30px', marginBottom: '10px' }}>📄</div>
-          <div style={{ fontSize: '16px', marginBottom: '10px' }}>CSV 匯出</div>
-          <button style={styles.button} onClick={exportCSV}>下載 CSV</button>
-        </div>
-        <div style={styles.statCard}>
-          <div style={{ fontSize: '30px', marginBottom: '10px' }}>📊</div>
-          <div style={{ fontSize: '16px', marginBottom: '10px' }}>Excel 匯出</div>
-          <button style={{...styles.button, opacity: 0.5}} disabled>即將推出</button>
-        </div>
-        <div style={styles.statCard}>
-          <div style={{ fontSize: '30px', marginBottom: '10px' }}>📑</div>
-          <div style={{ fontSize: '16px', marginBottom: '10px' }}>PDF 報告</div>
-          <button style={{...styles.button, opacity: 0.5}} disabled>即將推出</button>
-        </div>
-      </div>
+        {activeTab === 'export' && (
+          <div style={styles.card}>
+            <div style={styles.cardTitle}>📤 資料匯出</div>
+            <div style={styles.grid}>
+              <div style={styles.statCard} style={{flexDirection: 'column', textAlign: 'center', padding: '40px'}}>
+                <div style={{fontSize: '40px', marginBottom: '16px'}}>📄</div>
+                <div style={{fontSize: '16px', marginBottom: '16px'}}>CSV 匯出</div>
+                <button onClick={() => { const headers = ['時間', '負載', '太陽能', '台電', '儲能']; const rows = dailyData.map(h => [h.time, h.power, h.solar, h.taipower, h.battery]); const csv = [headers, ...rows].map(r => r.join(',')).join('\n'); const blob = new Blob(['\ufeff' + csv], {type: 'text/csv;charset=utf-8;'}); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `用電資料_${new Date().toISOString().split('T')[0]}.csv`; link.click(); }} style={styles.button}>下載 CSV</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
 
 function App() {
   const [user, setUser] = useState(null);
-
   const login = (userData) => setUser(userData);
   const logout = () => setUser(null);
 
