@@ -64,11 +64,6 @@ const generateDailyData = () => {
   return data;
 };
 
-const colors = {
-  bg: '#0a0a0f', card: '#1a1a2e', primary: '#FFD700', accent: '#00d4ff', 
-  success: '#00e676', error: '#ff5252', text: '#fff', textSecondary: '#a0a0a0', 
-  border: '#2a2a3e', taipower: '#FFD700', solar: '#4CAF50', battery: '#2196F3', load: '#FF5722'
-};
 
 const styles = {
   loginBg: { background: 'linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #1e1e32 100%)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' },
