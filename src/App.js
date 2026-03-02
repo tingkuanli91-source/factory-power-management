@@ -171,7 +171,7 @@ function Dashboard() {
   useEffect(() => { const timer = setInterval(() => setCurrentTime(new Date()), 1000); return () => clearInterval(timer); }, []);
 
   const currentData = dailyData[currentTime.getHours()] || { power: 0, solar: 0, taipower: 0, battery: 0 };
-  const totalDaily = dailyData.reduce((sum, h) => sum + h.power, 0);
+  // const totalDaily = dailyData.reduce((sum, h) => sum + h.power, 0); // Used in DataAnalysisModule
   const totalCost = calculateCost(dailyData, 'twoPeriod');
 
     return (
