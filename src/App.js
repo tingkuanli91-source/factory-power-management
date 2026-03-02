@@ -5,6 +5,7 @@ import DeviceManagementModule from './components/DeviceManagementModule';
 import DataAnalysisModule from './components/DataAnalysisModule';
 import ElectricityCostModule from './components/ElectricityCostModule';
 import DataExportModule from './components/DataExportModule';
+import UIModule from './components/UIModule';
 
 const AuthContext = createContext(null);
 
@@ -190,7 +191,8 @@ function Dashboard() {
             {key: 'devices', label: '📱', name: '設備'},
             {key: 'analysis', label: '📊', name: '分析'},
             {key: 'cost', label: '💰', name: '電費'},
-            {key: 'export', label: '📤', name: '匯出'}
+            {key: 'export', label: '📤', name: '匯出'},
+            {key: 'ui', label: '🎨', name: 'UI'}
           ].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} 
               style={{...styles.navLink, ...(activeTab === tab.key ? styles.navLinkActive : {})}}>
@@ -254,6 +256,12 @@ function Dashboard() {
         {activeTab === 'export' && (
           <div style={styles.card}>
             <DataExportModule dailyData={dailyData} devices={MOCK_DEVICES} />
+          </div>
+        )}
+
+        {activeTab === 'ui' && (
+          <div style={styles.card}>
+            <UIModule />
           </div>
         )}
       </main>
