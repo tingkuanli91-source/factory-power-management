@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'r
 import PowerFlowModule from './components/PowerFlowModule';
 import DeviceManagementModule from './components/DeviceManagementModule';
 import DataAnalysisModule from './components/DataAnalysisModule';
+import ElectricityCostModule from './components/ElectricityCostModule';
 
 const AuthContext = createContext(null);
 
@@ -245,12 +246,7 @@ function Dashboard() {
 
         {activeTab === 'cost' && (
           <div style={styles.card}>
-            <div style={styles.cardTitle}>💰 電費試算</div>
-            <div style={styles.grid}>
-              <div style={styles.statCard}><div style={styles.statValue}>NT$ {totalCost.totalCost.toFixed(0)}</div><div style={styles.statLabel}>今日電費</div></div>
-              <div style={styles.statCard}><div style={styles.statValue}>NT$ {(totalCost.totalCost * 30).toFixed(0)}</div><div style={styles.statLabel}>每月預估</div></div>
-              <div style={styles.statCard}><div style={styles.statValue}>NT$ {(totalCost.totalCost * 365 / 10000).toFixed(1)}萬</div><div style={styles.statLabel}>每年預估</div></div>
-            </div>
+            <ElectricityCostModule dailyData={dailyData} />
           </div>
         )}
 
