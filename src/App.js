@@ -6,6 +6,7 @@ import DataAnalysisModule from './components/DataAnalysisModule';
 import ElectricityCostModule from './components/ElectricityCostModule';
 import DataExportModule from './components/DataExportModule';
 import UIModule from './components/UIModule';
+import APIModule from './components/APIModule';
 
 const AuthContext = createContext(null);
 
@@ -192,7 +193,8 @@ function Dashboard() {
             {key: 'analysis', label: '📊', name: '分析'},
             {key: 'cost', label: '💰', name: '電費'},
             {key: 'export', label: '📤', name: '匯出'},
-            {key: 'ui', label: '🎨', name: 'UI'}
+            {key: 'ui', label: '🎨', name: 'UI'},
+            {key: 'api', label: '🔌', name: 'API'}
           ].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} 
               style={{...styles.navLink, ...(activeTab === tab.key ? styles.navLinkActive : {})}}>
@@ -262,6 +264,12 @@ function Dashboard() {
         {activeTab === 'ui' && (
           <div style={styles.card}>
             <UIModule />
+          </div>
+        )}
+
+        {activeTab === 'api' && (
+          <div style={styles.card}>
+            <APIModule />
           </div>
         )}
       </main>
