@@ -2,6 +2,7 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import PowerFlowModule from './components/PowerFlowModule';
 import DeviceManagementModule from './components/DeviceManagementModule';
+import DataAnalysisModule from './components/DataAnalysisModule';
 
 const AuthContext = createContext(null);
 
@@ -238,12 +239,7 @@ function Dashboard() {
 
         {activeTab === 'analysis' && (
           <div style={styles.card}>
-            <div style={styles.cardTitle}>📊 用電分析</div>
-            <div style={styles.grid}>
-              <div style={styles.statCard}><div style={styles.statValue}>{(totalDaily / 1000).toFixed(1)}</div><div style={styles.statLabel}>今日總用電 (kWh)</div></div>
-              <div style={styles.statCard}><div style={{...styles.statValue, color: '#4CAF50'}}>{(dailyData.reduce((s, h) => s + h.solar, 0) / 1000).toFixed(1)}</div><div style={styles.statLabel}>太陽能發電 (kWh)</div></div>
-              <div style={styles.statCard}><div style={{...styles.statValue, color: '#00d4ff'}}>{((dailyData.reduce((s, h) => s + h.solar, 0) / totalDaily) * 100).toFixed(1)}%</div><div style={styles.statLabel}>太陽能佔比</div></div>
-            </div>
+            <DataAnalysisModule dailyData={dailyData} />
           </div>
         )}
 
