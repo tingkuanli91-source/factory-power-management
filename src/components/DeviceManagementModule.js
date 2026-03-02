@@ -227,10 +227,6 @@ const DeviceManagementModule = ({ devices }) => {
   
   const filteredDevices = filter === 'all' ? devices : devices.filter(d => d.type === filter);
   
-  const getTypeName = (type) => {
-    const names = { taipower: '台電', solar: '太陽能', battery: '儲能', load: '負載' };
-    return names[type] || type;
-  };
   
   const typeCounts = {
     all: devices.length,
@@ -283,7 +279,7 @@ const DeviceManagementModule = ({ devices }) => {
             key={type}
             onClick={() => setFilter(type)}
             style={{
-              padding: '10px 20px', borderRadius: '25px', border: 'none',
+              padding: '10px 20px', borderRadius: '25px', 
               backgroundColor: filter === type ? '#FFD700' : '#1a1a2e',
               color: filter === type ? '#0a0a0f' : '#a0a0a0',
               fontSize: '13px', fontWeight: '600', cursor: 'pointer',
