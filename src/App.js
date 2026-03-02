@@ -173,3 +173,133 @@ function Dashboard() {
   const totalDaily = dailyData.reduce((sum, h) => sum + h.power, 0);
   const totalCost = calculateCost(dailyData, 'twoPeriod');
 
+    return (
+    <div style={{minHeight: '100vh', backgroundColor: '#0a0a0f', color: '#fff', fontFamily: "'Noto Sans TC', 'Microsoft JhengHei', Arial"}}>
+      <nav style={styles.nav}>
+        <div style={styles.navLogo}>
+          <div style={styles.navIcon}>⚡</div>
+          <div><div style={styles.navTitle}>台灣微網科技</div><div style={styles.navSubtitle}>用電管理系統</div></div>
+        </div>
+        <div style={{display: 'flex', gap: '4px', flexWrap: 'wrap'}}>
+          {[
+            {key: 'overview', label: '🏠', name: '總覽'},
+            {key: 'power', label: '⚡', name: '電力'},
+            {key: 'devices', label: '📱', name: '設備'},
+            {key: 'analysis', label: '📊', name: '分析'},
+            {key: 'cost', label: '💰', name: '電費'},
+            {key: 'export', label: '📤', name: '匯出'}
+          ].map(tab => (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)} 
+              style={{...styles.navLink, ...(activeTab === tab.key ? styles.navLinkActive : {})}}>
+              {tab.label} {tab.name}
+            </button>
+          ))}
+        </div>
+        <div style={{display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', backgroundColor: '#12121a', borderRadius: '8px'}}>
+          <div style={{width: '32px', height: '32px', background: 'linear-gradient(135deg, #FFD700, #FFA500)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>👨‍💼</div>
+          <div><div style={{fontSize: '13px', fontWeight: '600'}}>管理員</div><div style={{fontSize: '11px', color: '#a0a0a0'}}>台灣微網科技</div></div>
+        </div>
+      </nav>
+
+      <main style={styles.main}>
+        {activeTab === 'overview' && (
+          <>
+            <h1 style={styles.pageTitle}>📊 系統總覽 <span style={{fontSize: '14px', color: '#a0a0a0', fontWeight: 'normal'}}>{currentTime.toLocaleString('zh-TW', {year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'})}</span></h1>
+            <p style={styles.pageSubtitle}>即時監控工廠用電狀況與設備運行資訊</p>
+            
+            <div style={styles.grid}>
+              <div style={{...styles.statCard, borderLeft: '4px solid #FFD700'}}><div style={{...styles.statIcon, backgroundColor: 'rgba(255,215,0,0.1)'}}>⚡</div><div><div style={{...styles.statValue, color: '#FFD700'}}>{currentData.power.toFixed(1)}</div><div style={styles.statLabel}>目前負載 (kW)</div></div></div>
+              <div style={{...styles.statCard, borderLeft: '4px solid #4CAF50'}}><div style={{...styles.statIcon, backgroundColor: 'rgba(76,175,80,0.1)'}}>☀️</div><div><div style={{...styles.statValue, color: '#4CAF50'}}>{currentData.solar.toFixed(1)}</div><div style={styles.statLabel}>太陽能發電 (kW)</div></div></div>
+              <div style={{...styles.statCard, borderLeft: '4px solid #FFD700'}}><div style={{...styles.statIcon, backgroundColor: 'rgba(255,215,0,0.1)'}}>🔌</div><div><div style={styles.statValue}>{currentData.taipower.toFixed(1)}</div><div style={styles.statLabel}>台電供電 (kW)</div></div></div>
+              <div style={{...styles.statCard, borderLeft: '4px solid #2196F3'}}><div style={{...styles.statIcon, backgroundColor: 'rgba(33,150,243,0.1)'}}>🔋</div><div><div style={{...styles.statValue, color: '#2196F3'}}>{(currentData.battery >= 0 ? '+' : '') + currentData.battery.toFixed(1)}</div><div style={styles.statLabel}>儲能 {currentData.battery >= 0 ? '放電' : '充電'} (kW)</div></div></div>
+            </div>
+            
+            <div style={styles.card}>
+              <div style={styles.cardTitle}><span>📈 今日用電趨勢</span><span style={{fontSize: '12px', color: '#a0a0a0'}}>24小時監控</span></div>
+              <div style={{ display: 'flex', height: '200px', gap: '3px', alignItems: 'flex-end' }}>
+                {dailyData.map((hour, i) => (
+                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ width: '100%', height: Math.min(100, hour.power / 3) + '%', backgroundColor: i === currentTime.getHours() ? '#FFD700' : '#2a2a3e', borderRadius: '3px 3px 0 0', transition: 'all 0.3s', minHeight: '4px' }} />
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '11px', color: '#a0a0a0' }}><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'power' && <PowerFlowModule data={currentData} />}
+
+        {activeTab === 'devices' && (
+          <div style={styles.card}>
+            <DeviceManagementModule devices={MOCK_DEVICES} />
+          </div>
+        )}
+
+        {activeTab === 'analysis' && (
+          <div style={styles.card}>
+            <div style={styles.cardTitle}>📊 用電分析</div>
+            <div style={styles.grid}>
+              <div style={styles.statCard}><div style={styles.statValue}>{(totalDaily / 1000).toFixed(1)}</div><div style={styles.statLabel}>今日總用電 (kWh)</div></div>
+              <div style={styles.statCard}><div style={{...styles.statValue, color: '#4CAF50'}}>{(dailyData.reduce((s, h) => s + h.solar, 0) / 1000).toFixed(1)}</div><div style={styles.statLabel}>太陽能發電 (kWh)</div></div>
+              <div style={styles.statCard}><div style={{...styles.statValue, color: '#00d4ff'}}>{((dailyData.reduce((s, h) => s + h.solar, 0) / totalDaily) * 100).toFixed(1)}%</div><div style={styles.statLabel}>太陽能佔比</div></div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'cost' && (
+          <div style={styles.card}>
+            <div style={styles.cardTitle}>💰 電費試算</div>
+            <div style={styles.grid}>
+              <div style={styles.statCard}><div style={styles.statValue}>NT$ {totalCost.totalCost.toFixed(0)}</div><div style={styles.statLabel}>今日電費</div></div>
+              <div style={styles.statCard}><div style={styles.statValue}>NT$ {(totalCost.totalCost * 30).toFixed(0)}</div><div style={styles.statLabel}>每月預估</div></div>
+              <div style={styles.statCard}><div style={styles.statValue}>NT$ {(totalCost.totalCost * 365 / 10000).toFixed(1)}萬</div><div style={styles.statLabel}>每年預估</div></div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'export' && (
+          <div style={styles.card}>
+            <div style={styles.cardTitle}>📤 資料匯出</div>
+            <div style={styles.grid}>
+              <div style={{...styles.statCard, flexDirection: 'column', textAlign: 'center', padding: '40px'}}>
+                <div style={{fontSize: '40px', marginBottom: '16px'}}>📄</div>
+                <div style={{fontSize: '16px', marginBottom: '16px'}}>CSV 匯出</div>
+                <button onClick={() => { 
+                  const headers = ['時間', '負載', '太陽能', '台電', '儲能']; 
+                  const rows = dailyData.map(h => [h.time, h.power, h.solar, h.taipower, h.battery]); 
+                  const csv = [headers, ...rows].map(r => r.join(',')).join('\n'); 
+                  const blob = new Blob(['\ufeff' + csv], {type: 'text/csv;charset=utf-8;'}); 
+                  const link = document.createElement('a'); 
+                  link.href = URL.createObjectURL(blob); 
+                  link.download = '用電資料_' + new Date().toISOString().split('T')[0] + '.csv'; 
+                  link.click(); 
+                }} style={styles.button}>下載 CSV</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function App() {
+  const [user, setUser] = useState(null);
+  const login = (userData) => setUser(userData);
+  const logout = () => setUser(null);
+
+  return (
+    <AuthContext.Provider value={{ user, login, logout }}>
+      <Router>
+        <Routes>
+          <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/dashboard" />} />
+          <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/login" />} />
+          <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
+        </Routes>
+      </Router>
+    </AuthContext.Provider>
+  );
+}
+
+export default App;
