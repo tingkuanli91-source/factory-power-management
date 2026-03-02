@@ -1,5 +1,6 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import PowerFlowModule from './components/PowerFlowModule';
 
 const AuthContext = createContext(null);
 
@@ -256,19 +257,7 @@ function Dashboard() {
           </>
         )}
 
-        {activeTab === 'power' && (
-          <div style={styles.card}>
-            <div style={styles.cardTitle}>⚡ 即時電力潮流</div>
-            <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '40px 0', flexWrap: 'wrap', gap: '30px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-                <div style={{...styles.powerCircle, backgroundColor: '#FFD700', borderColor: '#FFD700'}}><span style={{fontSize: '28px'}}>⚡</span><span style={{fontSize: '12px', fontWeight: 'bold', color: '#333'}}>台電</span><span style={{fontSize: '14px', color: '#333'}}>{currentData.taipower.toFixed(1)} kW</span></div>
-                <div style={{...styles.powerCircle, backgroundColor: '#4CAF50', borderColor: '#4CAF50'}}><span style={{fontSize: '28px'}}>☀️</span><span style={{fontSize: '12px', fontWeight: 'bold', color: '#fff'}}>太陽能</span><span style={{fontSize: '14px', color: '#fff'}}>{currentData.solar.toFixed(1)} kW</span></div>
-              </div>
-              <div style={{fontSize: '50px', color: '#FFD700'}}>→</div>
-              <div style={{...styles.powerCircle, backgroundColor: '#FF5722', borderColor: '#FF5722', width: '140px', height: '140px'}}><span style={{fontSize: '40px'}}>🏭</span><span style={{fontSize: '14px', fontWeight: 'bold', color: '#fff'}}>總負載</span><span style={{fontSize: '22px', color: '#fff'}}>{currentData.power.toFixed(1)} kW</span></div>
-            </div>
-          </div>
-        )}
+        {activeTab === 'power' && <PowerFlowModule data={currentData} />}
 
         {activeTab === 'devices' && (
           <div style={styles.card}>
