@@ -173,7 +173,7 @@ function Dashboard() {
 
   const currentData = dailyData[currentTime.getHours()] || { power: 0, solar: 0, taipower: 0, battery: 0 };
   // const totalDaily = dailyData.reduce((sum, h) => sum + h.power, 0); // Used in DataAnalysisModule
-  const totalCost = calculateCost(dailyData, 'twoPeriod');
+  // const totalCost = calculateCost(dailyData, 'twoPeriod'); // Used in ElectricityCostModule
 
     return (
     <div style={{minHeight: '100vh', backgroundColor: '#0a0a0f', color: '#fff', fontFamily: "'Noto Sans TC', 'Microsoft JhengHei', Arial"}}>
