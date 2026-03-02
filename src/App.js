@@ -1,6 +1,7 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import PowerFlowModule from './components/PowerFlowModule';
+import DeviceManagementModule from './components/DeviceManagementModule';
 
 const AuthContext = createContext(null);
 
@@ -261,24 +262,7 @@ function Dashboard() {
 
         {activeTab === 'devices' && (
           <div style={styles.card}>
-            <div style={styles.cardTitle}>📱 設備列表 <span style={{fontSize: '12px', color: '#a0a0a0'}}>共 {MOCK_DEVICES.length} 個設備</span></div>
-            <table style={styles.table}>
-              <thead><tr><th style={styles.th}>設備名稱</th><th style={styles.th}>類型</th><th style={styles.th}>位置</th><th style={styles.th}>功率</th><th style={styles.th}>狀態</th></tr></thead>
-              <tbody>
-                {MOCK_DEVICES.map(device => {
-                  const colors = getDeviceColor(device.type);
-                  return (
-                    <tr key={device.id}>
-                      <td style={styles.td}><span style={{marginRight: '10px', fontSize: '18px'}}>{getDeviceIcon(device.type)}</span>{device.name}</td>
-                      <td style={styles.td}><span style={{padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', backgroundColor: colors.bg, color: colors.color}}>{getDeviceTypeName(device.type)}</span></td>
-                      <td style={styles.td}>{device.location}</td>
-                      <td style={styles.td}><strong>{device.power} kW</strong></td>
-                      <td style={styles.td}><span style={{...styles.badge, backgroundColor: device.status === 'active' ? 'rgba(0,230,118,0.15)' : 'rgba(255,82,82,0.15)', color: device.status === 'active' ? '#00e676' : '#ff5252'}}>{device.status === 'active' ? '● 運作中' : '○ 停止'}</span></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <DeviceManagementModule devices={MOCK_DEVICES} />
           </div>
         )}
 
