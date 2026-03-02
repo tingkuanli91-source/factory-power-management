@@ -1,5 +1,5 @@
 // PowerFlowModule - 專業電力潮流視覺化元件 (v2.0 Enhanced)
-import React, { useState } from 'react';
+import React from 'react';
 
 // 電力節點元件
 const PowerNode = ({ type, power, label, icon, color, size = 'medium', status = 'active' }) => {
