@@ -4,6 +4,7 @@ import PowerFlowModule from './components/PowerFlowModule';
 import DeviceManagementModule from './components/DeviceManagementModule';
 import DataAnalysisModule from './components/DataAnalysisModule';
 import ElectricityCostModule from './components/ElectricityCostModule';
+import DataExportModule from './components/DataExportModule';
 
 const AuthContext = createContext(null);
 
@@ -252,23 +253,7 @@ function Dashboard() {
 
         {activeTab === 'export' && (
           <div style={styles.card}>
-            <div style={styles.cardTitle}>📤 資料匯出</div>
-            <div style={styles.grid}>
-              <div style={{...styles.statCard, flexDirection: 'column', textAlign: 'center', padding: '40px'}}>
-                <div style={{fontSize: '40px', marginBottom: '16px'}}>📄</div>
-                <div style={{fontSize: '16px', marginBottom: '16px'}}>CSV 匯出</div>
-                <button onClick={() => { 
-                  const headers = ['時間', '負載', '太陽能', '台電', '儲能']; 
-                  const rows = dailyData.map(h => [h.time, h.power, h.solar, h.taipower, h.battery]); 
-                  const csv = [headers, ...rows].map(r => r.join(',')).join('\n'); 
-                  const blob = new Blob(['\ufeff' + csv], {type: 'text/csv;charset=utf-8;'}); 
-                  const link = document.createElement('a'); 
-                  link.href = URL.createObjectURL(blob); 
-                  link.download = '用電資料_' + new Date().toISOString().split('T')[0] + '.csv'; 
-                  link.click(); 
-                }} style={styles.button}>下載 CSV</button>
-              </div>
-            </div>
+            <DataExportModule dailyData={dailyData} devices={MOCK_DEVICES} />
           </div>
         )}
       </main>
