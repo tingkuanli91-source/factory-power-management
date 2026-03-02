@@ -1,5 +1,5 @@
-// PowerFlowModule - 專業電力潮流視覺化元件
-import React from 'react';
+// PowerFlowModule - 專業電力潮流視覺化元件 (v2.0 Enhanced)
+import React, { useState } from 'react';
 
 // 電力節點元件
 const PowerNode = ({ type, power, label, icon, color, size = 'medium', status = 'active' }) => {
@@ -110,8 +110,43 @@ const PowerGauge = ({ value, max, label, color, unit = 'kW' }) => {
   );
 };
 
+// 即時功率圖表
+const MiniPowerChart = ({ hourlyData }) => {
+  if (!hourlyData || hourlyData.length === 0) return null;
+  
+  const maxPower = Math.max(...hourlyData.map(d => d.power), 1);
+  const height = 60;
+  
+  return (
+    <div style={{ 
+      backgroundColor: '#12121a', borderRadius: '12px', padding: '16px', marginTop: '16px'
+    }}>
+      <div style={{ fontSize: '12px', color: '#a0a0a0', marginBottom: '12px' }}>
+        📈 24小時用電趨勢
+      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: height + 'px' }}>
+        {hourlyData.slice(0, 24).map((d, i) => (
+          <div key={i} style={{ 
+            flex: 1, 
+            height: (d.power / maxPower * height) + 'px',
+            backgroundColor: d.solar > d.power ? '#4CAF50' : '#FFD700',
+            borderRadius: '2px 2px 0 0',
+            minHeight: '4px',
+            transition: 'height 0.3s ease'
+          }} title={`${d.time}: ${d.power} kW`} />
+        ))}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontSize: '10px', color: '#666' }}>
+        <span>00:00</span>
+        <span>12:00</span>
+        <span>23:59</span>
+      </div>
+    </div>
+  );
+};
+
 // 主要電力潮流模組
-const PowerFlowModule = ({ data }) => {
+const PowerFlowModule = ({ data, hourlyData = [] }) => {
   const totalLoad = data.power || 0;
   const solarPower = data.solar || 0;
   const taipowerPower = data.taipower || 0;
@@ -126,6 +161,11 @@ const PowerFlowModule = ({ data }) => {
   // 自發自用率
   const selfConsumptionRate = totalLoad > 0 ? (solarToLoad / totalLoad * 100) : 0;
   const gridDependency = totalLoad > 0 ? (taipowerToLoad / totalLoad * 100) : 0;
+  
+  // 今日統計
+  const todayTotal = hourlyData.reduce((s, d) => s + d.power, 0) / 1000;
+  const todaySolar = hourlyData.reduce((s, d) => s + d.solar, 0) / 1000;
+  const peakPower = Math.max(...hourlyData.map(d => d.power), 0);
 
   return (
     <div style={{ 
@@ -160,7 +200,7 @@ const PowerFlowModule = ({ data }) => {
           }}>⚡</div>
           <div>
             <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#fff' }}>即時電力潮流</div>
-            <div style={{ fontSize: '12px', color: '#a0a0a0' }}>Real-time Power Flow</div>
+            <div style={{ fontSize: '12px', color: '#a0a0a0' }}>Real-time Power Flow v2.0</div>
           </div>
         </div>
         <div style={{ 
@@ -217,6 +257,39 @@ const PowerFlowModule = ({ data }) => {
         <PowerGauge value={solarPower} max={150} label="太陽能發電" color="#4CAF50" />
         <PowerGauge value={Math.abs(batteryPower)} max={50} label={`儲能 ${batteryPower >= 0 ? '放電' : '充電'}`} color="#2196F3" />
         <PowerGauge value={totalLoad} max={300} label="總用電負載" color="#FF5722" />
+      </div>
+      
+      {/* 今日統計 + 圖表 */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '20px' }}>
+        {/* 今日統計 */}
+        <div style={{ 
+          backgroundColor: '#12121a', borderRadius: '12px', padding: '16px'
+        }}>
+          <div style={{ fontSize: '12px', color: '#a0a0a0', marginBottom: '12px' }}>
+            📊 今日統計 (v2.0)
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <div style={{ fontSize: '10px', color: '#666' }}>今日總用電</div>
+              <div style={{ fontSize: '18px', color: '#fff', fontWeight: 'bold' }}>{todayTotal.toFixed(1)} kWh</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '10px', color: '#666' }}>太陽能發電</div>
+              <div style={{ fontSize: '18px', color: '#4CAF50', fontWeight: 'bold' }}>{todaySolar.toFixed(1)} kWh</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '10px', color: '#666' }}>尖峰功率</div>
+              <div style={{ fontSize: '18px', color: '#FF5722', fontWeight: 'bold' }}>{peakPower.toFixed(1)} kW</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '10px', color: '#666' }}>節能率</div>
+              <div style={{ fontSize: '18px', color: '#2196F3', fontWeight: 'bold' }}>{todayTotal > 0 ? (todaySolar / todayTotal * 100).toFixed(1) : 0}%</div>
+            </div>
+          </div>
+        </div>
+        
+        {/* 即時趨勢圖 */}
+        <MiniPowerChart hourlyData={hourlyData} />
       </div>
       
       {/* 詳細資訊 */}

@@ -235,7 +235,7 @@ function Dashboard() {
           </>
         )}
 
-        {activeTab === 'power' && <PowerFlowModule data={currentData} />}
+        {activeTab === 'power' && <PowerFlowModule data={currentData} hourlyData={dailyData} />}
 
         {activeTab === 'devices' && (
           <div style={styles.card}>
