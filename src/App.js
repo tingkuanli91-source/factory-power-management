@@ -21,10 +21,10 @@ const MOCK_DEVICES = [
   { id: '7', name: '冷氣設備', type: 'load', location: '全區', status: 'active', power: 55 },
 ];
 
-const TAIWAN_ELECTRICITY = {
-  twoPeriod: { summer: { peak: 4.46, offPeak: 2.12 }, nonSummer: { peak: 3.97, offPeak: 1.87 } },
-  threePeriod: { summer: { peak: 4.46, semiPeak: 3.52, offPeak: 2.12 }, nonSummer: { peak: 3.97, semiPeak: 3.16, offPeak: 1.87 } }
-};
+// const TAIWAN_ELECTRICITY = {
+//   twoPeriod: { summer: { peak: 4.46, offPeak: 2.12 }, nonSummer: { peak: 3.97, offPeak: 1.87 } },
+//   threePeriod: { summer: { peak: 4.46, semiPeak: 3.52, offPeak: 2.12 }, nonSummer: { peak: 3.97, semiPeak: 3.16, offPeak: 1.87 } }
+// };
 
 // const calculateCost = (dailyData, planType) => {
 //   const isSummer = new Date().getMonth() >= 5 && new Date().getMonth() <= 8;
