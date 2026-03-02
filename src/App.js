@@ -26,29 +26,29 @@ const TAIWAN_ELECTRICITY = {
   threePeriod: { summer: { peak: 4.46, semiPeak: 3.52, offPeak: 2.12 }, nonSummer: { peak: 3.97, semiPeak: 3.16, offPeak: 1.87 } }
 };
 
-const calculateCost = (dailyData, planType) => {
-  const isSummer = new Date().getMonth() >= 5 && new Date().getMonth() <= 8;
-  const rates = planType === 'twoPeriod' 
-    ? (isSummer ? TAIWAN_ELECTRICITY.twoPeriod.summer : TAIWAN_ELECTRICITY.twoPeriod.nonSummer) 
-    : (isSummer ? TAIWAN_ELECTRICITY.threePeriod.summer : TAIWAN_ELECTRICITY.threePeriod.nonSummer);
-  let cost = 0, peakKwh = 0, offPeakKwh = 0, semiPeakKwh = 0;
-  dailyData.forEach(hour => {
-    const hourNum = parseInt(hour.time.split(':')[0]);
-    const kwh = hour.power / 1000;
-    if (planType === 'twoPeriod') {
-      if (hourNum >= 7 && hourNum < 22) peakKwh += kwh; else offPeakKwh += kwh;
-    } else {
-      if (hourNum >= 7 && hourNum < 22) { 
-        if (hourNum >= 15 && hourNum < 20) semiPeakKwh += kwh; 
-        else peakKwh += kwh; 
-      } else offPeakKwh += kwh;
-    }
-  });
-  cost = planType === 'twoPeriod' 
-    ? peakKwh * rates.peak + offPeakKwh * rates.offPeak 
-    : peakKwh * rates.peak + semiPeakKwh * rates.semiPeak + offPeakKwh * rates.offPeak;
-  return { totalCost: Math.round(cost * 100) / 100, peakKwh, offPeakKwh, semiPeakKwh, rates };
-};
+// const calculateCost = (dailyData, planType) => {
+//   const isSummer = new Date().getMonth() >= 5 && new Date().getMonth() <= 8;
+//   const rates = planType === 'twoPeriod' 
+//     ? (isSummer ? TAIWAN_ELECTRICITY.twoPeriod.summer : TAIWAN_ELECTRICITY.twoPeriod.nonSummer) 
+//     : (isSummer ? TAIWAN_ELECTRICITY.threePeriod.summer : TAIWAN_ELECTRICITY.threePeriod.nonSummer);
+//   let cost = 0, peakKwh = 0, offPeakKwh = 0, semiPeakKwh = 0;
+//   dailyData.forEach(hour => {
+//     const hourNum = parseInt(hour.time.split(':')[0]);
+//     const kwh = hour.power / 1000;
+//     if (planType === 'twoPeriod') {
+//       if (hourNum >= 7 && hourNum < 22) peakKwh += kwh; else offPeakKwh += kwh;
+//     } else {
+//       if (hourNum >= 7 && hourNum < 22) { 
+//         if (hourNum >= 15 && hourNum < 20) semiPeakKwh += kwh; 
+//         else peakKwh += kwh; 
+//       } else offPeakKwh += kwh;
+//     }
+//   });
+//   cost = planType === 'twoPeriod' 
+//     ? peakKwh * rates.peak + offPeakKwh * rates.offPeak 
+//     : peakKwh * rates.peak + semiPeakKwh * rates.semiPeak + offPeakKwh * rates.offPeak;
+//   return { totalCost: Math.round(cost * 100) / 100, peakKwh, offPeakKwh, semiPeakKwh, rates };
+// };
 
 const generateDailyData = () => {
   const data = [];
