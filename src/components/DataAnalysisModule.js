@@ -47,17 +47,16 @@ const StatCard = ({ title, value, unit, change, color, icon }) => (
 const DataAnalysisModule = ({ dailyData }) => {
   const [timeRange, setTimeRange] = useState('day');
   
-  // 計算統計數據 (修正: power 單位為 kW，每小時代表 1 小時，故總和即為 kWh)
-  const totalPower = dailyData.reduce((sum, h) => sum + h.power, 0); // kWh (24小時加總)
-  const totalPowerKwh = totalPower; // 直接使用，無需除以 1000
-  const avgPower = totalPower / 24; // 平均功率 kW
+  // 計算統計數據: power 單位為 kW，每小時代表 1 小時，總和即為 kWh
+  const totalPowerKwh = dailyData.reduce((sum, h) => sum + h.power, 0); // kWh (24小時加總)
+  const avgPower = totalPowerKwh / 24; // 平均功率 kW
   const maxPower = Math.max(...dailyData.map(h => h.power));
   const minPower = Math.min(...dailyData.filter(h => h.power > 0).map(h => h.power));
   const peakHour = dailyData.find(h => h.power === maxPower)?.time || '--';
   
   // 太陽能統計 (發電量 kWh)
   const totalSolar = dailyData.reduce((sum, h) => sum + h.solar, 0);
-  const solarCoverage = totalPower > 0 ? (totalSolar / totalPower * 100) : 0;
+  const solarCoverage = totalPowerKwh > 0 ? (totalSolar / totalPowerKwh * 100) : 0;
   
   // 月份資料模擬
   const monthlyData = [
@@ -121,7 +120,7 @@ const DataAnalysisModule = ({ dailyData }) => {
         display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
         gap: '16px', marginBottom: '24px'
       }}>
-        <StatCard title="今日總用電" value={totalPowerKwh.toFixed(1)} unit="kWh" change={5.2} color="#FFD700" icon="⚡" />
+        <StatCard title="今日總用電" value={totalPowerKwh.toFixed(0)} unit="kWh" change={5.2} color="#FFD700" icon="⚡" />
         <StatCard title="平均功率" value={avgPower.toFixed(0)} unit="kW" change={-2.1} color="#4CAF50" icon="📈" />
         <StatCard title="尖峰功率" value={maxPower.toFixed(0)} unit="kW" change={8.5} color="#FF5722" icon="🔺" />
         <StatCard title="太陽能覆蓋率" value={solarCoverage.toFixed(1)} unit="%" change={12.3} color="#2196F3" icon="☀️" />

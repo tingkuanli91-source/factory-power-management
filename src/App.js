@@ -60,12 +60,19 @@ const generateDailyData = () => {
     const baseLoad = 150 + Math.sin((i - 6) * Math.PI / 12) * 80;
     const solarPower = isDaytime ? Math.max(0, 120 * Math.sin((i - 6) * Math.PI / 12)) : 0;
     const load = Math.max(50, baseLoad + (Math.random() - 0.5) * 40);
+    
+    // 修正: 儲能系統計算邏輯 - 與 PowerFlowModule 一致
+    // 太陽能多於負載時充電，太陽能少於負載時放電
+    const batteryCharge = Math.max(0, solarPower - load) * 0.5;  // 太陽能過剩時充電 50%
+    const batteryDischarge = Math.max(0, load - solarPower) * 0.3;  // 負載不足時放電 30%
+    const batteryPower = batteryCharge - batteryDischarge;  // 正值為放電，負值為充電
+    
     data.push({ 
       time: i.toString().padStart(2, '0') + ':00', 
       power: Math.round(load * 10) / 10, 
       solar: Math.round(solarPower * 10) / 10, 
-      taipower: Math.max(0, Math.round((load - solarPower) * 10) / 10), 
-      battery: solarPower > load ? Math.round((solarPower - load) * 0.5 * 10) / 10 : -Math.round(Math.max(0, load - solarPower) * 0.3 * 10) / 10 
+      taipower: Math.max(0, Math.round((load - solarPower - batteryDischarge) * 10) / 10), 
+      battery: Math.round(batteryPower * 10) / 10
     });
   }
   return data;

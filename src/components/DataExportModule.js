@@ -114,10 +114,10 @@ const DataExportModule = ({ dailyData, devices }) => {
 
 📊 用電概況
 --------------------------------------
-今日總用電: ${(totalPower / 1000).toFixed(2)} kWh
-太陽能發電: ${(totalSolar / 1000).toFixed(2)} kWh
+今日總用電: ${totalPower.toFixed(1)} kWh
+太陽能發電: ${totalSolar.toFixed(1)} kWh
 太陽能佔比: ${(totalSolar / totalPower * 100).toFixed(1)}%
-平均功率: ${(totalPower / 24).toFixed(2)} kW
+平均功率: ${(totalPower / 24).toFixed(1)} kW
 
 📈 24小時用電資料
 --------------------------------------
