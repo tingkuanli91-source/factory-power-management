@@ -179,8 +179,8 @@ const PowerFlowModule = ({ data, hourlyData = [] }) => {
         <div style={{ backgroundColor: '#12121a', borderRadius: '10px', padding: '10px' }}>
           <div style={{ fontSize: '10px', color: '#a0a0a0', marginBottom: '6px' }}>📊 今日統計</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '10px' }}>
-            <div><span style={{ color: '#666' }}>用電:</span> <span style={{ color: '#fff' }}>{(hourlyData.reduce((s,d)=>s+d.power,0)/1000).toFixed(1)}kWh</span></div>
-            <div><span style={{ color: '#666' }}>太陽能:</span> <span style={{ color: '#4CAF50' }}>{(hourlyData.reduce((s,d)=>s+d.solar,0)/1000).toFixed(1)}kWh</span></div>
+            <div><span style={{ color: '#666' }}>用電:</span> <span style={{ color: '#fff' }}>{(hourlyData.reduce((s,d)=>s+d.power,0)).toFixed(1)}kWh</span></div>
+            <div><span style={{ color: '#666' }}>太陽能:</span> <span style={{ color: '#4CAF50' }}>{(hourlyData.reduce((s,d)=>s+d.solar,0)).toFixed(1)}kWh</span></div>
           </div>
         </div>
         <MiniPowerChart hourlyData={hourlyData} />

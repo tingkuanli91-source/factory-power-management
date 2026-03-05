@@ -66,7 +66,7 @@ const ElectricityCostModule = ({ dailyData }) => {
     
     dailyData.forEach(hour => {
       const hourNum = parseInt(hour.time.split(':')[0]);
-      const kwh = hour.power / 1000;
+      const kwh = hour.power;
       
       if (planType === 'twoPeriod') {
         // 兩段式: 尖峰 7:00-22:00, 離峰 22:00-7:00
@@ -104,7 +104,7 @@ const ElectricityCostModule = ({ dailyData }) => {
   const yearlyEstimate = cost.totalCost * 365;
   
   // 太陽能節省
-  const solarSavings = dailyData.reduce((sum, h) => sum + h.solar, 0) / 1000 * 4.46;
+  const solarSavings = dailyData.reduce((sum, h) => sum + h.solar, 0) * 4.46;
 
   return (
     <div>
@@ -249,7 +249,7 @@ const ElectricityCostModule = ({ dailyData }) => {
           border: '1px solid #2a2a3e', textAlign: 'center'
         }}>
           <div style={{ fontSize: '14px', color: '#a0a0a0', marginBottom: '8px' }}>📆 每年預估</div>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#fff' }}>NT$ {(yearlyEstimate / 10000).toFixed(1)} 萬</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#fff' }}>NT$ {yearlyEstimate >= 10000 ? (yearlyEstimate / 10000).toFixed(1) + ' 萬' : yearlyEstimate.toFixed(0)}</div>
           <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>(365天)</div>
         </div>
         

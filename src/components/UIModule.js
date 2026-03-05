@@ -55,7 +55,7 @@ const UIModule = () => {
             padding: '20px', backgroundColor: '#12121a', borderRadius: '12px', 
             textAlign: 'center', flex: '1 1 200px'
           }}>
-            <div style={{ fontSize: '32px', marginBottom: '8px' }}>�平板</div>
+            <div style={{ fontSize: '32px', marginBottom: '8px' }}>📱</div>
             <div style={{ fontSize: '14px', color: '#fff', marginBottom: '4px' }}>平板</div>
             <div style={{ fontSize: '12px', color: '#666' }}>768px - 1024px</div>
           </div>
