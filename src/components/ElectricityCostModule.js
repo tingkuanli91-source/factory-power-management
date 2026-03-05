@@ -60,13 +60,13 @@ const ElectricityCostModule = ({ dailyData }) => {
   const [planType, setPlanType] = useState('twoPeriod');
   const [isSummer, setIsSummer] = useState(true);
   
-  // 電費計算
+  // 電費計算 (修正: power 為 kW，需除以 1000 轉為 kWh)
   const calculateCost = () => {
     let peakKwh = 0, semiPeakKwh = 0, offPeakKwh = 0;
     
     dailyData.forEach(hour => {
       const hourNum = parseInt(hour.time.split(':')[0]);
-      const kwh = hour.power;
+      const kwh = hour.power / 1000; // 修正: kW → kWh (除以 1000)
       
       if (planType === 'twoPeriod') {
         // 兩段式: 尖峰 7:00-22:00, 離峰 22:00-7:00
@@ -99,12 +99,38 @@ const ElectricityCostModule = ({ dailyData }) => {
   
   const cost = calculateCost();
   
-  // 計算每月/年預估
-  const monthlyEstimate = cost.totalCost * 30;
-  const yearlyEstimate = cost.totalCost * 365;
+  // 計算每月/年預估 (修正: 需考慮夏月/非夏月費率差異)
+  // 夏月為 6-9 月 (4 個月)，非夏月為 10-5 月 (8 個月)
+  const summerRateWeight = 4/12; // 夏月權重
+  const nonSummerRateWeight = 8/12; // 非夏月權重
   
-  // 太陽能節省
-  const solarSavings = dailyData.reduce((sum, h) => sum + h.solar, 0) * 4.46;
+  // 計算夏月和非夏月的費率
+  const summerRates = planType === 'twoPeriod' 
+    ? { peak: 4.46, offPeak: 2.12 }
+    : { peak: 4.46, semiPeak: 3.52, offPeak: 2.12 };
+  const nonSummerRates = planType === 'twoPeriod'
+    ? { peak: 3.97, offPeak: 1.87 }
+    : { peak: 3.97, semiPeak: 3.16, offPeak: 1.87 };
+  
+  // 計算平均費率
+  const avgPeakRate = summerRates.peak * summerRateWeight + nonSummerRates.peak * nonSummerRateWeight;
+  const avgOffPeakRate = summerRates.offPeak * summerRateWeight + nonSummerRates.offPeak * nonSummerRateWeight;
+  const avgSemiPeakRate = planType === 'threePeriod' 
+    ? (summerRates.semiPeak * summerRateWeight + nonSummerRates.semiPeak * nonSummerRateWeight)
+    : 0;
+  
+  // 使用平均費率計算年預估
+  const avgRate = planType === 'twoPeriod'
+    ? (cost.peakKwh * avgPeakRate + cost.offPeakKwh * avgOffPeakRate) / (cost.peakKwh + cost.offPeakKwh || 1)
+    : (cost.peakKwh * avgPeakRate + cost.semiPeakKwh * avgSemiPeakRate + cost.offPeakKwh * avgOffPeakRate) / (cost.peakKwh + cost.semiPeakKwh + cost.offPeakKwh || 1);
+  
+  const monthlyEstimate = cost.totalCost * 30;
+  // 修正: 年度預估考虑夏月/非夏月費率差異 + 每月天數變化
+  const yearlyEstimate = (cost.totalCost * 122) * (isSummer ? 1 : avgRate / (isSummer ? summerRates.peak : nonSummerRates.peak)) + 
+                        (cost.totalCost * 243) * (!isSummer ? 1 : avgRate / (isSummer ? summerRates.peak : nonSummerRates.peak));
+  
+  // 太陽能節省 (修正: 發電量除以 1000 轉為 kWh)
+  const solarSavings = (dailyData.reduce((sum, h) => sum + h.solar, 0) / 1000) * (isSummer ? 4.46 : 3.97);
 
   return (
     <div>
