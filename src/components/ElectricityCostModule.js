@@ -99,58 +99,31 @@ const ElectricityCostModule = ({ dailyData }) => {
   
   const cost = calculateCost();
   
-  // 計算每月/年預估 (修正: 需考慮夏月/非夏月費率差異)
-  // 夏月為 6-9 月 (4 個月)，非夏月為 10-5 月 (8 個月)
-  const summerRateWeight = 4/12; // 夏月權重
-  const nonSummerRateWeight = 8/12; // 非夏月權重
-  
-  // 計算夏月和非夏月的費率
-  const summerRates = planType === 'twoPeriod' 
-    ? { peak: 4.46, offPeak: 2.12 }
-    : { peak: 4.46, semiPeak: 3.52, offPeak: 2.12 };
-  const nonSummerRates = planType === 'twoPeriod'
-    ? { peak: 3.97, offPeak: 1.87 }
-    : { peak: 3.97, semiPeak: 3.16, offPeak: 1.87 };
-  
-  // 計算平均費率
-  const avgPeakRate = summerRates.peak * summerRateWeight + nonSummerRates.peak * nonSummerRateWeight;
-  const avgOffPeakRate = summerRates.offPeak * summerRateWeight + nonSummerRates.offPeak * nonSummerRateWeight;
-  const avgSemiPeakRate = planType === 'threePeriod' 
-    ? (summerRates.semiPeak * summerRateWeight + nonSummerRates.semiPeak * nonSummerRateWeight)
-    : 0;
-  
-  // 使用平均費率計算年預估 (修正: 使用加權平均費率計算)
-  const avgRate = planType === 'twoPeriod'
-    ? (cost.peakKwh * avgPeakRate + cost.offPeakKwh * avgOffPeakRate) / (cost.peakKwh + cost.offPeakKwh || 1)
-    : (cost.peakKwh * avgPeakRate + cost.semiPeakKwh * avgSemiPeakRate + cost.offPeakKwh * avgOffPeakRate) / (cost.peakKwh + cost.semiPeakKwh + cost.offPeakKwh || 1);
-  
-  const monthlyEstimate = cost.totalCost * 30;
-  
-  // 年度預估: 修正 - 使用年度平均費率計算，而非簡單乘以 365
-  // 考虑夏月電費較高(4個月)與非夏月較低(8個月)
-  const yearlyEstimate = avgRate * (cost.peakKwh + cost.semiPeakKwh + cost.offPeakKwh) * 365;
-  
-  // 太陽能節省: 發電量(kWh) × 平均費率 (修正: 使用加權平均費率)
+  // Bug 3 & Bug 4 修復: 計算年度平均費率 (考慮夏月/非夏月差異)
   // 夏月 (6-9月) 權重 4/12，非夏月權重 8/12
   const summerWeight = 4/12;
   const nonSummerWeight = 8/12;
-  const avgRate = isSummer 
-    ? (planType === 'twoPeriod' 
-        ? (cost.peakKwh * 4.46 + cost.offPeakKwh * 2.12) / (cost.peakKwh + cost.offPeakKwh || 1)
-        : (cost.peakKwh * 4.46 + cost.semiPeakKwh * 3.52 + cost.offPeakKwh * 2.12) / (cost.peakKwh + cost.semiPeakKwh + cost.offPeakKwh || 1))
-    : (planType === 'twoPeriod'
-        ? (cost.peakKwh * 3.97 + cost.offPeakKwh * 1.87) / (cost.peakKwh + cost.offPeakKwh || 1)
-        : (cost.peakKwh * 3.97 + cost.semiPeakKwh * 3.16 + cost.offPeakKwh * 1.87) / (cost.peakKwh + cost.semiPeakKwh + cost.offPeakKwh || 1));
   
-  // 計算年度平均費率 (考虑夏月/非夏月差異)
+  // 計算加權年度平均費率 (考慮用電時段分布)
+  const totalDailyKwh = cost.peakKwh + cost.semiPeakKwh + cost.offPeakKwh;
+  const peakRatio = totalDailyKwh > 0 ? cost.peakKwh / totalDailyKwh : 0;
+  const semiPeakRatio = totalDailyKwh > 0 ? cost.semiPeakKwh / totalDailyKwh : 0;
+  const offPeakRatio = totalDailyKwh > 0 ? cost.offPeakKwh / totalDailyKwh : 0;
+  
+  // 年度平均費率 = 各時段費率加權平均 (夏月4個月 + 非夏月8個月)
   const yearlyAvgRate = planType === 'twoPeriod'
-    ? (4.46 * summerWeight + 3.97 * nonSummerWeight) * (cost.peakKwh / (cost.peakKwh + cost.offPeakKwh || 1)) +
-      (2.12 * summerWeight + 1.87 * nonSummerWeight) * (cost.offPeakKwh / (cost.peakKwh + cost.offPeakKwh || 1))
-    : (4.46 * summerWeight + 3.97 * nonSummerWeight) * (cost.peakKwh / (cost.peakKwh + cost.semiPeakKwh + cost.offPeakKwh || 1)) +
-      (3.52 * summerWeight + 3.16 * nonSummerWeight) * (cost.semiPeakKwh / (cost.peakKwh + cost.semiPeakKwh + cost.offPeakKwh || 1)) +
-      (2.12 * summerWeight + 1.87 * nonSummerWeight) * (cost.offPeakKwh / (cost.peakKwh + cost.semiPeakKwh + cost.offPeakKwh || 1));
+    ? (4.46 * peakRatio + 2.12 * offPeakRatio) * summerWeight + 
+      (3.97 * peakRatio + 1.87 * offPeakRatio) * nonSummerWeight
+    : (4.46 * peakRatio + 3.52 * semiPeakRatio + 2.12 * offPeakRatio) * summerWeight + 
+      (3.97 * peakRatio + 3.16 * semiPeakRatio + 1.87 * offPeakRatio) * nonSummerWeight;
   
-  const solarSavings = dailyData.reduce((sum, h) => sum + h.solar, 0) * avgRate;
+  const monthlyEstimate = cost.totalCost * 30;
+  
+  // Bug 4 修復: 年度預估 = 每日用電量 × 365天 × 年度平均費率
+  const yearlyEstimate = totalDailyKwh * 365 * yearlyAvgRate;
+  
+  // 太陽能節省: 發電量(kWh) × 年度平均費率
+  const solarSavings = dailyData.reduce((sum, h) => sum + h.solar, 0) * yearlyAvgRate;
 
   return (
     <div>
